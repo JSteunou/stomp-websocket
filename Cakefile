@@ -1,6 +1,7 @@
 fs     = require 'fs'
 {exec} = require 'child_process'
 util   = require 'util'
+umdify = require 'libumd'
 
 binDir = "./node_modules/.bin/"
 
@@ -15,7 +16,7 @@ task 'watch', 'Watch for changes in coffee files to build and test', ->
     watchDir 'test', ->
       invoke 'build:test'
     watchDir 'dist/test', (file)->
-      # We only want to run tests once (a second), 
+      # We only want to run tests once (a second),
       # even if a bunch of test files change
       time = new Date().getTime()
       if (time-lastTest) > 1000
@@ -24,7 +25,7 @@ task 'watch', 'Watch for changes in coffee files to build and test', ->
 
 task 'test', 'Run the tests', ->
   util.log "Running tests..."
-  exec binDir + "jasmine-node --nocolor dist/test", (err, stdout, stderr) -> 
+  exec binDir + "jasmine-node --nocolor dist/test", (err, stdout, stderr) ->
     if err
       handleError(parseTestResults(stdout), stderr)
     else
@@ -33,13 +34,23 @@ task 'test', 'Run the tests', ->
 
 task 'build', 'Build source and tests', ->
   invoke 'build:src'
+  invoke 'build:umd'
   invoke 'build:min'
   invoke 'build:test'
 
 task 'build:src', 'Build the src files into lib', ->
   util.log "Compiling src..."
-  exec binDir + "coffee -o lib/ -c src/", (err, stdout, stderr) -> 
+  exec binDir + "coffee -o lib/ -c src/", (err, stdout, stderr) ->
     handleError(err) if err
+
+task 'build:umd', 'Build UMD version of the lib', ->
+  exec binDir + "coffee -b -j lib/stomp.umd.js -c src/stomp.coffee", (err, stdout, stderr) ->
+    handleError(err) if err
+    fs.readFile "lib/stomp.umd.js", (err, data) ->
+      handleError(err) if err
+      result = umdify String(data), { globalAlias: 'Stomp' }
+      fs.writeFile "lib/stomp.umd.js", result, (err) ->
+        handleError(err) if err
 
 task 'build:min', 'Build the minified files into lib', ->
   util.log "Minify src..."
@@ -48,12 +59,12 @@ task 'build:min', 'Build the minified files into lib', ->
 
 task 'build:doc', 'Build docco documentation', ->
   util.log "Building doc..."
-  exec binDir + "docco -o doc/ src/*.coffee", (err, stdout, stderr) -> 
+  exec binDir + "docco -o doc/ src/*.coffee", (err, stdout, stderr) ->
     handleError(err) if err
 
 task 'build:test', 'Build the test files into lib/test', ->
   util.log "Compiling test..."
-  exec binDir + "coffee -o dist/test/ -c test/", (err, stdout, stderr) -> 
+  exec binDir + "coffee -o dist/test/ -c test/", (err, stdout, stderr) ->
     handleError(err) if err
 
 watchDir = (dir, callback) ->
@@ -73,14 +84,14 @@ parseTestResults = (data) ->
 lastLine = (data) ->
   (line for line in data.split('\n') when line.length > 5).pop()
 
-handleError = (error, stderr) -> 
+handleError = (error, stderr) ->
   if stderr? and !error
     util.log stderr
     displayNotification stderr.match(/\n(Error:[^\n]+)/)?[1]
   else
     util.log error
     displayNotification error
-        
-displayNotification = (message = '') -> 
+
+displayNotification = (message = '') ->
   options = { title: 'CoffeeScript' }
   try require('growl').notify message, options

@@ -10,10 +10,11 @@
   "devDependencies": {
     "coffee-script": "latest",
     "coffeelint": "latest",
-    "jasmine-node": "latest",
-    "uglify-js": "latest",
+    "connect": "latest",
     "docco": "latest",
-    "connect": "latest"
+    "jasmine-node": "latest",
+    "libumd": "^0.6.0",
+    "uglify-js": "latest"
   },
   "optionalDependencies": {
     "websocket": "latest"
