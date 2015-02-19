@@ -34,22 +34,27 @@ task 'test', 'Run the tests', ->
 
 task 'build', 'Build source and tests', ->
   invoke 'build:src'
-  invoke 'build:umd'
   invoke 'build:min'
   invoke 'build:test'
 
 task 'build:src', 'Build the src files into lib', ->
   util.log "Compiling src..."
-  exec binDir + "coffee -o lib/ -c src/", (err, stdout, stderr) ->
+  invoke 'build:node'
+  invoke 'build:umd'
+
+task 'build:node', 'Build node version of the lib', ->
+  util.log "Compiling node version..."
+  exec binDir + "coffee -j lib/stomp-node.js -c src/stomp-node.coffee", (err, stdout, stderr) ->
     handleError(err) if err
 
 task 'build:umd', 'Build UMD version of the lib', ->
-  exec binDir + "coffee -b -j lib/stomp.umd.js -c src/stomp.coffee", (err, stdout, stderr) ->
+  util.log "Compiling UMD version..."
+  exec binDir + "coffee -b -j lib/stomp.js -c src/stomp.coffee", (err, stdout, stderr) ->
     handleError(err) if err
-    fs.readFile "lib/stomp.umd.js", (err, data) ->
+    fs.readFile "lib/stomp.js", (err, data) ->
       handleError(err) if err
       result = umdify String(data), { globalAlias: 'Stomp' }
-      fs.writeFile "lib/stomp.umd.js", result, (err) ->
+      fs.writeFile "lib/stomp.js", result, (err) ->
         handleError(err) if err
 
 task 'build:min', 'Build the minified files into lib', ->
