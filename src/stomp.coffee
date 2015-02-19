@@ -163,11 +163,11 @@ class Client
   #     };
   debug: (message) ->
     window?.console?.log message
-      
+
   # Utility method to get the current timestamp (Date.now is not defined in IE8)
   now= ->
     if Date.now then Date.now() else new Date().valueOf
-  
+
   # Base method to transmit any stomp frame
   _transmit: (command, headers, body) ->
     out = Frame.marshall(command, headers, body)
@@ -398,7 +398,7 @@ class Client
       abort: ->
         client.abort txid
     }
-  
+
   # [COMMIT Frame](http://stomp.github.com/stomp-specification-1.1.html#COMMIT)
   #
   # * `transaction` is MANDATORY.
@@ -413,7 +413,7 @@ class Client
     @_transmit "COMMIT", {
       transaction: transaction
     }
-  
+
   # [ABORT Frame](http://stomp.github.com/stomp-specification-1.1.html#ABORT)
   #
   # * `transaction` is MANDATORY.
@@ -428,7 +428,7 @@ class Client
     @_transmit "ABORT", {
       transaction: transaction
     }
-  
+
   # [ACK Frame](http://stomp.github.com/stomp-specification-1.1.html#ACK)
   #
   # * `messageID` & `subscription` are MANDATORY.
@@ -510,18 +510,12 @@ Stomp =
 
 # # `Stomp` object exportation
 
-# export as CommonJS module
-if exports?
-  exports.Stomp = Stomp
-
-# export in the Web Browser
+# in the Web browser, rely on `window.setInterval` to handle heart-beats
 if window?
-  # in the Web browser, rely on `window.setInterval` to handle heart-beats
   Stomp.setInterval= (interval, f) ->
     window.setInterval f, interval
   Stomp.clearInterval= (id) ->
     window.clearInterval id
-  window.Stomp = Stomp
-# or in the current object (e.g. a WebWorker)
-else if !exports
-  self.Stomp = Stomp
+
+# return the Stomp object
+return Stomp
