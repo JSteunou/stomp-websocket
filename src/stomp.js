@@ -1,3 +1,11 @@
+const VERSIONS = {
+    V1_0: '1.0',
+    V1_1: '1.1',
+    V1_2: '1.2',
+    // Versions of STOMP specifications supported
+    supportedVersions: () => '1.1,1.0'
+};
+
 // Define constants for bytes used throughout the code.
 // LINEFEED byte (octet 10)
 const BYTES_LF = '\x0A';
@@ -268,7 +276,7 @@ class Client {
         };
         this.ws.onopen = () => {
             this.debug('Web Socket Opened...');
-            headers['accept-version'] = Stomp.VERSIONS.supportedVersions();
+            headers['accept-version'] = VERSIONS.supportedVersions();
             headers['heart-beat'] = [this.heartbeat.outgoing, this.heartbeat.incoming].join(',');
             this._transmit('CONNECT', headers);
         };
@@ -411,9 +419,9 @@ class Client {
     // Clean up client resources when it is disconnected or the server did not
     // send heart beats in a timely fashion
     _cleanUp() {
-        this.connected = false
-        Stomp.clearInterval(this.pinger);
-        Stomp.clearInterval(this.ponger);
+        this.connected = false;
+        clearInterval(this.pinger);
+        clearInterval(this.ponger);
     }
 
     // Base method to transmit any stomp frame
@@ -435,7 +443,7 @@ class Client {
 
     // Heart-beat negotiation
     _setupHeartbeat(headers) {
-        if (headers.version !== Stomp.VERSIONS.V1_1 || headers.version !== Stomp.VERSIONS.V1_2) return;
+        if (headers.version !== VERSIONS.V1_1 || headers.version !== VERSIONS.V1_2) return;
 
         // heart-beat header received from the server looks like:
         //
@@ -491,3 +499,18 @@ class Client {
     }
 
 }
+
+// ##The `Stomp` Object
+const Stomp = {
+    VERSIONS,
+    // This method creates a WebSocket client that is connected to
+    // the STOMP server located at the url.
+    client: function(url, protocols = ['v10.stomp', 'v11.stomp']) {
+        let ws = new WebSocket(url, protocols);
+        return new Client(ws);
+    },
+    // This method is an alternative to `Stomp.client()` to let the user
+    // specify the WebSocket to use (either a standard HTML5 WebSocket or
+    // a similar object).
+    over: (ws) => new Client(ws)
+};
